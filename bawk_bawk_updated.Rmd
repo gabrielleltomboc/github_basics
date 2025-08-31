@@ -1,0 +1,133 @@
+---
+title: "Bawk Bawk 2.0"
+author: "G. Tomboc"
+date: "2025-08-28"
+output: html_document
+header-includes:
+
+---
+
+
+![](image_baby_chicks.png)
+
+<style>
+table, th, td{
+  border-bottom: 1px solid black !important;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(leaflet)
+data(ChickWeight)
+?title
+```
+
+Visit this [page](https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/ChickWeight.html) for more information on this dataset in R.
+
+[**Let's make a table that show the average weight of chicks based on their type of diet.**]{style="color:sienna"}
+```{r echo=TRUE}
+ChickWeight %>%
+  group_by(Diet) %>%
+  summarise(
+    "Mean Weight" = round(mean(weight, na.rm = TRUE), 2)
+)%>%
+      kable(caption = 'Table 1. A knitr kable displaying the chicks average weight (g) per diet.')
+```
+
+[**Now, let's make another table that show the maximum and minimum weight of a chick over the course of their diet.**]{style="color:sienna"}
+```{r echo=TRUE}
+ChickWeight %>%
+  filter(Time > 0) %>%
+  group_by(Diet) %>%
+  summarise(
+    "Min Weight" = min(weight, na.rm = TRUE),
+    "Max Weight" = max(weight, na.rm = TRUE)
+)%>%
+      kable( caption = "Table 2. A knitr kable displaying the maximum and minimum weight (g) of a chick based on their diet type.")
+```
+
+[**We can now make a linear model that analyzes the relationship of a chick's weight based on the amount of days it has been since birth. **]{style="color:sienna"}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+fig_lm_weight <- lm(weight ~ Time * Diet, data = ChickWeight)
+
+ggplot(ChickWeight, aes(x = Time, y = weight, color = Diet)) +
+  geom_point(size = 2, alpha = 0.5) +
+  geom_smooth(method = "lm", se = TRUE, linetype = "dashed") +
+  labs(
+    x = "Time (days)",
+    y = "Weight (grams)",
+    color = "Diet",
+    caption = "Figure 1. Linear model of a chick's weight (g) vs time (days).", fig.align = 'center',
+) +
+theme_classic() +
+  theme(
+    plot.caption = element_text(hjust = 0.5)
+  )
+
+ggsave("fig_linearmodel_weight.png", width = 6, height = 4, dpi = 300)
+```
+
+[**Let's make a boxplot that shows the relationship between diet and weight**]{style="color:sienna"}
+```{r boxplot, echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+png("fig_boxplot_weight.png", width = 6, height = 4, units = "in", res = 300)
+
+fig_weight_diet <- boxplot(weight ~ Diet, data = ChickWeight,
+                           col = "pink",
+                           xlab = "Diet",
+                           ylab = "Weight (grams)")
+mean_weight <- tapply(ChickWeight$weight, ChickWeight$Diet, mean)
+points(1:length(mean_weight), mean_weight, col = "lightgreen", pch = 19)
+mtext("Figure 2. Boxplot of the relationship between the chick's diet and weight (g).",
+      side = 1, line = 4, cex = 0.8)
+
+dev.off()
+
+fig_weight_diet <- boxplot(weight ~ Diet, data = ChickWeight,
+                           col = "pink",
+                           xlab = "Diet",
+                           ylab = "Weight (grams)")
+mean_weight <- tapply(ChickWeight$weight, ChickWeight$Diet, mean)
+points(1:length(mean_weight), mean_weight, col = "lightgreen", pch = 19)
+mtext("Figure 2. Boxplot of the relationship between the chick's diet and weight (g).",
+      side = 1, line = 4, cex = 0.8)
+```
+
+[**We can now make a histogram of the chick's weight categorized by their diets**]{style="color:sienna"}
+```{r histogram, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+png("fig_histogram_weight.png", width = 6, height = 4, units = "in", res = 300)
+
+fig_weight_hist <- hist(ChickWeight$weight,
+                            xlab = "Weight (grams)",
+                            col = "skyblue",
+                            border = "black",
+                            main = "")
+mtext("Figure 3. Histogram of chick's weight (g) based upon their diet type.",
+      side = 1, line = 4, cex = 0.8)
+
+dev.off()
+
+fig_weight_hist <- hist(ChickWeight$weight,
+                            xlab = "Weight (grams)",
+                            col = "skyblue",
+                            border = "black",
+                            main = "")
+mtext("Figure 3. Histogram of chick's weight (g) based upon their diet type.",
+      side = 1, line = 4, cex = 0.8)
+```
+
+[**This dataframe does not have information on the chick specific location, however, I found a farm in Pennsylvania that has White Leghorn Chickens!**]{style="color:sienna"}
+
+<a href="https://www.myerspoultry.com/product-white-leghorn" target="_blank">
+White Leghorn Chicken - Myers Poultry
+</a>
+
+```{r Map, echo=TRUE}
+leaflet() %>%
+  setView(lat = 40.338856742081816, lng = -78.81147611388295, zoom = 16) %>% #lat-long of the place of interest
+  addTiles() %>%
+  addMarkers(lat = 40.339175676907914, lng = -78.81143856294747, popup = "Meyer's Farm")
+```
